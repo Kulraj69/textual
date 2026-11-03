@@ -68,6 +68,26 @@ def test_tracked_slugs(tracker: TrackedSlugs, text: str, expected: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "texts, expected",
+    [
+        (("Topic", "Topic", "Topic-1"), ("topic", "topic-1", "topic-1-1")),
+        (("Topic-1", "Topic", "Topic"), ("topic-1", "topic", "topic-2")),
+        (("a", "a", "a-1", "a"), ("a", "a-1", "a-1-1", "a-2")),
+        (("a-1", "a", "a", "a-1"), ("a-1", "a", "a-2", "a-1-1")),
+    ],
+)
+def test_tracked_slugs_reserve_generated_suffixes(
+    texts: tuple[str, ...], expected: tuple[str, ...]
+) -> None:
+    """Generated suffixes must not collide with the literal slug of another heading.
+
+    Regression test for https://github.com/Textualize/textual/issues/6750
+    """
+    tracker = TrackedSlugs()
+    assert [tracker.slug(text) for text in texts] == list(expected)
+
+
+@pytest.mark.parametrize(
     "text, expected",
     [
         ("", "_"),
