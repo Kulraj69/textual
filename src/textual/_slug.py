@@ -98,6 +98,8 @@ class TrackedSlugs:
         """Initialise the tracked slug object."""
         self._used: defaultdict[str, int] = defaultdict(int)
         """Keeps track of how many times a particular slug has been used."""
+        self._emitted: set[str] = set()
+        """Every slug ever returned, so a generated suffix can't collide with a literal slug."""
 
     def slug(self, text: str) -> str:
         """Create a Markdown-friendly unique slug from the given text.
@@ -108,12 +110,17 @@ class TrackedSlugs:
         Returns:
             A slug for the given text.
         """
-        slugged = slug(text)
-        used = self._used[slugged]
-        self._used[slugged] += 1
-        if used:
-            slugged = f"{slugged}-{used}"
-        return slugged
+        base = slug(text)
+        used = self._used[base]
+        self._used[base] += 1
+        candidate = base if used == 0 else f"{base}-{used}"
+        while candidate in self._emitted:
+            # A generated suffix may be the literal slug of another heading.
+            used = self._used[base]
+            self._used[base] += 1
+            candidate = f"{base}-{used}"
+        self._emitted.add(candidate)
+        return candidate
 
 
 VALID_ID_CHARACTERS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789-")
